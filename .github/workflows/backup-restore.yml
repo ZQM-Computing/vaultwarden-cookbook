@@ -5,11 +5,15 @@ on:
     paths:
       - "examples/04-backup-restore/**"
       - ".github/workflows/backup-restore.yml"
+      - "README.md"
+      - "docs/**"
   push:
     branches: [main]
     paths:
       - "examples/04-backup-restore/**"
       - ".github/workflows/backup-restore.yml"
+      - "README.md"
+      - "docs/**"
   workflow_dispatch:
 
 permissions:
