@@ -42,7 +42,7 @@ python -m unittest -v test_backup_restore.py
 - This is a file-copy exercise, not proof of SQLite consistency, application-level restore, encrypted off-host retention, or recovery objectives.
 - Never commit admin tokens, real vault data, exports, or encryption keys.
 
-The example README lists the additional checks required for an actual recovery runbook, including application-consistent backup, attachments, ownership, isolated restore, version compatibility, and post-restore application checks.
+The [application-aware recovery runbook](docs/RESTORE-RUNBOOK.md) expands these limits into a controlled backup, isolated restore, synthetic application-validation, evidence, and cleanup checklist. It remains operational guidance: it has not been executed against a live Vaultwarden deployment.
 
 ## Roadmap
 
