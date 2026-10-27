@@ -1,0 +1,38 @@
+name: Synthetic backup restore tests
+
+on:
+  pull_request:
+    paths:
+      - "examples/04-backup-restore/**"
+      - ".github/workflows/backup-restore.yml"
+  push:
+    branches: [main]
+    paths:
+      - "examples/04-backup-restore/**"
+      - ".github/workflows/backup-restore.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vaultwarden-backup-restore-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  synthetic-round-trip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run regression tests
+        working-directory: examples/04-backup-restore
+        run: python -m unittest -v test_backup_restore.py
+      - name: Run end-to-end synthetic drill
+        working-directory: examples/04-backup-restore
+        run: python backup_restore.py
