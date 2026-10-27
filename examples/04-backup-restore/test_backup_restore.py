@@ -1,4 +1,5 @@
 """Regression tests for the synthetic backup/restore drill."""
+import hashlib
 import sqlite3
 import tempfile
 import unittest
@@ -63,6 +64,47 @@ class BackupRestoreTests(unittest.TestCase):
                 entries.append(f"{backup_restore.sha256(path)}  {path.relative_to(backup).as_posix()}")
             (backup / backup_restore.MANIFEST).write_text("\n".join(entries) + "\n", encoding="utf-8")
             with self.assertRaises(SystemExit):
+                backup_restore.verify_backup(backup)
+
+    def test_rejects_manifest_path_traversal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, backup = root / "source", root / "backup"
+            backup_restore.write_fixture(source)
+            backup_restore.create_backup(source, backup)
+            outside = root / "outside.txt"
+            outside.write_text("synthetic outside file", encoding="utf-8")
+            digest = backup_restore.sha256(outside)
+            (backup / backup_restore.MANIFEST).write_text(
+                f"{digest}  ../outside.txt\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(SystemExit, "unsafe or missing manifest path"):
+                backup_restore.verify_backup(backup)
+
+    def test_rejects_manifest_symlink_resolving_outside_backup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, backup = root / "source", root / "backup"
+            backup_restore.write_fixture(source)
+            backup_restore.create_backup(source, backup)
+            outside = root / "outside.txt"
+            outside.write_text("synthetic outside file", encoding="utf-8")
+            (backup / "outside-link.txt").symlink_to(outside)
+            digest = backup_restore.sha256(outside)
+            (backup / backup_restore.MANIFEST).write_text(
+                f"{digest}  outside-link.txt\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(SystemExit, "unsafe or missing manifest path"):
+                backup_restore.verify_backup(backup)
+
+    def test_rejects_empty_manifest_for_nonempty_backup(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source, backup = root / "source", root / "backup"
+            backup_restore.write_fixture(source)
+            backup_restore.create_backup(source, backup)
+            (backup / backup_restore.MANIFEST).write_text("", encoding="utf-8")
+            with self.assertRaisesRegex(SystemExit, "manifest inventory mismatch"):
                 backup_restore.verify_backup(backup)
 
     def test_refuses_existing_backup_and_restore_destination(self):
